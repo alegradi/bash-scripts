@@ -4,135 +4,32 @@
 # Clear docker images that are no longer needed
 # Recommended to be running as a cronjob once a week
 
-
-# TODO:
-# - check images by repo name
-# - check which images can be removed
-# - remove images
-# - Write logs about what has been cleaned off
-
+#--------------------------------------------------##--------------------------------------------------#
+## Variables ##
 
 #Which repo's images should be cleared
-DOCKER_REPO="adamlegradi/*"
+DOCKER_BASE_REPO="adamlegradi/*"
+# Log location
+# LOG_LOCATION="/var/log/docker_image_cleaner.log"
+LOG_LOCATION="/home/adam/testy.log"
 
-#Get a list of all images
-docker images $DOCKER_REPO | tail -n +2 | awk '{print $1}' | sort | uniq
+## Do not edit below this line
+#--------------------------------------------------##--------------------------------------------------#
 
-## Test on localhost with returning the value as an array?
+# Get an array of sub repos of the DOCKER_BASE_REPO
+docker_repo=( $(docker images $DOCKER_BASE_REPO | tail -n +2 | cut -d ' ' -f 1 | sort | uniq) )
 
-
-
-# Sort out all the images, discard header and first container
-docker images adamlegradi/cucos | tail -n +3 
-
-# for loop all images by repo
-# for loop all images
-
-## This works but maybe for loop is needed?
-# image_func(){
-#     for image in $image_repo
-#     do
-
-#         REMOVE_IMAGE=$(docker rmi $(docker images $image | tail -n +3 | awk '{print $3}') 2>&1)  # We are writing it to the log
-#         echo $REMOVE_IMAGE
-#         WRITE_LOG="$(date) - $REMOVE_IMAGE"
-#         echo $WRITE_LOG >> ~/testy.log
-
-#     done
-# }
-
-
-
-##
-# Below ends in endless loop. test how to work around that
-##
-# image_func(){
-#     while [ $NUMBER_OF_IMAGES -ge 0 ] 
-#     do
-#         REMOVE_IMAGE=$(docker rmi $(docker images $image | tail -n 1 | awk '{print $3}') 2>&1)  # We are writing it to the log
-#         echo "Removal attempt - $REMOVE_IMAGE"  ##here only for debug
-
-# # Tail needs adjusting to jump to the next one
-
-
-#         WRITE_LOG="$(date) - $REMOVE_IMAGE"
-#         echo $WRITE_LOG >> ~/testy.log
-
-#         NUMBER_OF_IMAGES=$(( $NUMBER_OF_IMAGES - 1 )) 
-#         echo $NUMBER_OF_IMAGES  ## Here only for debug
-#     done
-# }
-
-
-# for image_repo in `docker images $DOCKER_REPO | tail -n +2 | awk '{print $1}' | sort | uniq`
-# do
-#     NUMBER_OF_IMAGES=$(docker images $image_repo | tail -n +3 | wc -l)
-#     echo "Original number of images: $NUMBER_OF_IMAGES"  ##here for debug
-#     image_func
-# done
-
-
-############### Test array for loop ##################
-
-# image_func(){
-#     while [ $NUMBER_OF_IMAGES -ge 0 ] 
-#     do
-#         REMOVE_IMAGE=$(docker rmi $(docker images $image | tail -n 1 | awk '{print $3}') 2>&1)  # We are writing it to the log
-#         echo "Removal attempt - $REMOVE_IMAGE"  ##here only for debug
-
-# # Tail needs adjusting to jump to the next one
-
-
-#         WRITE_LOG="$(date) - $REMOVE_IMAGE"
-#         echo $WRITE_LOG >> ~/testy.log
-
-#         NUMBER_OF_IMAGES=$(( $NUMBER_OF_IMAGES - 1 )) 
-#         echo $NUMBER_OF_IMAGES  ## Here only for debug
-#     done
-# }
-
-
-# for image_repo in `docker images $DOCKER_REPO | tail -n +2 | awk '{print $1}' | sort | uniq`
-# do
-#     DOCKER_IMAGES=$(docker images $image_repo | tail -n +3 | awk '{print $3}')
-#     echo "$DOCKER_IMAGES"  ##here for debug
-#     # image_func
-# done
-
-
-array=$(docker images adamlegradi/mediawiki-kb | tail -n +3 | awk '{print $3}')
-
-# array=( one two three )
-for i in "${array[@]}"
+# Loop through the elements of the array to find docker images for each
+for docker_image_repo in "${docker_repo[@]}"
 do
-	echo "$i"
+    docker_image=( $(docker images $docker_image_repo | tail -n +3 | awk '{ print $3 }'))
+
+    for docker_image_delete in "${docker_image[@]}"
+    do
+        # echo "Removing $docker_image_delete"  # <<--- working, not needed now
+        REMOVE_IMAGE=$(docker rmi -f $docker_image_delete 2>&1)
+        WRITE_TO_LOG="$(date +"%d-%m-%Y %H:%M:%S") - Deleting - $docker_image_repo - $docker_image_delete - $REMOVE_IMAGE"
+        echo $WRITE_TO_LOG >> $LOG_LOCATION
+    done
+
 done
-
-
-
-
-
-
-
-
-
-################## Test ###################
-
-# image_func(){
-#     while [ $NUMBER_OF_IMAGES -ge 0 ] 
-#     do
-#         echo "Remaining attempts until 0: $NUMBER_OF_IMAGES"
-        
-#         NUMBER_OF_IMAGES=$(( $NUMBER_OF_IMAGES - 1 ))
-#         echo $NUMBER_OF_IMAGES  ## Here only for debug
-#     done
-# }
-
-
-# for image_repo in `docker images $DOCKER_REPO | tail -n +2 | awk '{print $1}' | sort | uniq`
-# do
-#     NUMBER_OF_IMAGES=3
-#     echo "Original number of images: $NUMBER_OF_IMAGES"  ##here for debug
-#     image_func
-# done
-
