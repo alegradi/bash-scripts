@@ -7,7 +7,6 @@
 # Declare shell variable option #2
 # read -s HELLO
 
-
 # Export shell variable, making it an environment variable
 export HELLO
 
